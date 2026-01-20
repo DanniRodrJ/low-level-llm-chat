@@ -1,0 +1,6 @@
+openai:
+  model: "openai/gpt-4o-mini"
+huggingface:
+  model: "moonshotai/Kimi-K2-Thinking"
+ollama:
+  model: "llama3.2"
