@@ -1,23 +1,24 @@
 import json
 from .providers.base import LLMProvider
-from src.tools.file_ops import (
-    list_files_schema, read_file_schema, edit_file_schema,
-    list_files_in_dir, read_file, edit_file, get_temperature,
-    get_temperature_schema
+from .tools.file_ops import (
+    list_files_schema, read_file_schema, edit_file_schema, get_weather_schema, search_web_schema,
+    list_files_in_dir, read_file, edit_file, get_weather, search_web
 )
 
 ALL_TOOLS_SCHEMAS = [
     list_files_schema,
     read_file_schema,
     edit_file_schema,
-    get_temperature_schema
+    get_weather_schema,
+    search_web_schema
 ]
 
 ALL_TOOLS_FUNCTIONS = {
     'list_files_in_dir': list_files_in_dir,
     'read_file': read_file,
     'edit_file': edit_file,
-    'get_temperature': get_temperature
+    'get_weather': get_weather,
+    'search_web': search_web
 }
 
 class Agent:
@@ -27,14 +28,15 @@ class Agent:
         self.tools = tools or ALL_TOOLS_SCHEMAS
         self.tool_functions = ALL_TOOLS_FUNCTIONS
 
-    def process_input(self, user_input: str, params: dict = None) -> str:
+    def process_input(self, user_input: str, params: dict = None) -> tuple[str, list[str]]:
+        tool_logs = []
         self.messages.append({"role": "user", "content": user_input})
         while True:
             try:
                 response = self.provider.generate_response(self.messages, self.tools, params)
             except ValueError as e:
                 print(f"Error en provider: {e}")
-                return "Lo siento, hubo un error al generar la respuesta."
+                return "Lo siento, hubo un error al generar la respuesta.", tool_logs
 
             if response['tool_calls']:
                 formatted_tool_calls = [
@@ -65,7 +67,9 @@ class Agent:
                         print("Error parseando argumentos de la tool call")
                         args = {}
 
-                    print(f"Llamando a herramienta: {fn_name} con args: {args}")
+                    log_msg = f"Llamando a herramienta: {fn_name} con args: {args}"
+                    tool_logs.append(log_msg)
+                    print(log_msg)
 
                     if fn_name in self.tool_functions:
                         try:
@@ -90,4 +94,4 @@ class Agent:
             else:
                 final_content = response['content']
                 self.messages.append({"role": "assistant", "content": final_content})
-                return final_content
+                return final_content, tool_logs

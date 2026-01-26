@@ -1,7 +1,7 @@
 from .openai import OpenAIProvider
 from .huggingface import HuggingFaceProvider
 from .ollama import OllamaProvider
-from src.config.config import Config
+from ..config.config import Config
 
 class ProviderFactory:
     @staticmethod
