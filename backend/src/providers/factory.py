@@ -13,4 +13,4 @@ class ProviderFactory:
         elif name.lower() == 'ollama':
             return OllamaProvider(base_url=Config.OLLAMA_BASE_URL, model=Config.OLLAMA_MODEL)
         else:
-            raise ValueError(f"Provider inválido: {name}")
+            raise ValueError(f"Invalid provider: {name}")

@@ -31,4 +31,4 @@ class HuggingFaceProvider(LLMProvider):
                 'tool_calls': tool_calls
             }
         except Exception as e:
-            raise ValueError(f"Error en HuggingFace: {str(e)}")
+            raise ValueError(f"Error in HuggingFace: {str(e)}")

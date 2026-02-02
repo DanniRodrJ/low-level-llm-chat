@@ -1,8 +1,12 @@
 import os
 import json
 import requests
-from bs4 import BeautifulSoup
+from serpapi import GoogleSearch
 
+SAFE_DIR = os.path.abspath("demo-files")
+os.makedirs(SAFE_DIR, exist_ok=True)
+
+# Only use in local/private environments. In public production, disable or restrict to a secure directory.
 def list_files_in_dir(directory: str = '.'):
     try:
         files = os.listdir(directory)
@@ -14,34 +18,41 @@ list_files_schema = {
     "type": "function",
     "function": {
         "name": "list_files_in_dir",
-        "description": "Lista los archivos en un directorio (por defecto actual)",
+        "description": "List the files in a directory (the current one by default)",
         "parameters": {
             "type": "object",
             "properties": {
-                "directory": {"type": "string", "description": "Directorio (opcional)"}
+                "directory": {"type": "string", "description": "Directory (optional)"}
             },
             "required": []
         }
     }
 }
 
+def is_safe_path(basedir: str, path: str) -> bool:
+    base = os.path.abspath(basedir)
+    full_path = os.path.abspath(os.path.join(base, path.lstrip('/')))
+    return full_path.startswith(base) and not os.path.islink(full_path)
 
 def read_file(path: str):
+    if not is_safe_path(SAFE_DIR, path):
+        return "Access denied: invalid path or out of permissions"
+    full_path = os.path.join(SAFE_DIR, path)
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return f.read()
+        with open(full_path, 'r', encoding='utf-8') as f:
+            return f.read()[:10000]  # 10KB limit
     except Exception as e:
-        return f"Error al leer el archivo {path}: {str(e)}"
+        return f"Error reading file {path}: {str(e)}"
     
 read_file_schema = {
     "type": "function",
     "function": {
         "name": "read_file",
-        "description": "Lee el contenido de un archivo",
+        "description": "Read the contents of a file",
         "parameters": {
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Ruta del archivo"}
+                "path": {"type": "string", "description": "File path"}
             },
             "required": ["path"]
         }
@@ -50,37 +61,40 @@ read_file_schema = {
 
 
 def edit_file(path: str, prev_text: str = '', new_text: str = ''):
+    if not is_safe_path(SAFE_DIR, path):
+        return "Access denied: invalid path or out of permissions"
+    full_path = os.path.join(SAFE_DIR, path)
     try:
-        existed = os.path.exists(path)
+        if len(new_text) > 10000:
+            return "Content too long (max 10KB)"
+        
+        existed = os.path.exists(full_path)
         if existed and prev_text:
-            content = read_file(path)
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
             if prev_text not in content:
-                return f"Texto '{prev_text}' no encontrado en el archivo"
+                return f"Text '{prev_text}' not found"
             content = content.replace(prev_text, new_text)
         else:
-            dir_name = os.path.dirname(path)
-            if dir_name:
-                os.makedirs(dir_name, exist_ok=True)
             content = new_text
 
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(full_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        action = "editado" if existed and prev_text else "creado"
-        return f"Archivo {path} {action} exitosamente"
+        return f"File {path} {'edited' if existed else 'created'} successfully"
     except Exception as e:
-        return f"Error al editar el archivo {path}: {str(e)}"
+        return f"Error while editing: {str(e)}"
 
 edit_file_schema = {
     "type": "function",
     "function": {
         "name": "edit_file",
-        "description": "Edita o crea un archivo reemplazando texto",
+        "description": "Edit or create a file by replacing text",
         "parameters": {
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Ruta del archivo"},
-                "prev_text": {"type": "string", "description": "Texto a reemplazar (opcional)"},
-                "new_text": {"type": "string", "description": "Nuevo texto"}
+                "path": {"type": "string", "description": "File path"},
+                "prev_text": {"type": "string", "description": "Text to replace (optional)"},
+                "new_text": {"type": "string", "description": "New text"}
             },
             "required": ["path", "new_text"]
         }
@@ -89,13 +103,11 @@ edit_file_schema = {
 
 
 def get_weather(city: str, unit: str = "celsius"):
-    """Obtiene la temperatura actual en una ciudad usando Open-Meteo (API gratuita)"""
     try:
-        # Geocoding simple (lat/lon) - Open-Meteo tiene endpoint directo
         url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=es&format=json"
         geo = requests.get(url).json()
         if not geo.get("results"):
-            return f"No encontré la ciudad '{city}'"
+            return f"I couldn't find the city '{city}'"
         
         lat = geo["results"][0]["latitude"]
         lon = geo["results"][0]["longitude"]
@@ -105,20 +117,20 @@ def get_weather(city: str, unit: str = "celsius"):
         temp = data["current"]["temperature_2m"]
         unit_symbol = "°C" if unit == "celsius" else "°F"
         
-        return f"La temperatura actual en {city} es de {temp}{unit_symbol}."
+        return f"The current temperature in {city} is {temp} degrees."
     except Exception as e:
-        return f"Error al obtener el clima: {str(e)}"
+        return f"Error retrieving weather: {str(e)}"
 
 get_weather_schema = {
     "type": "function",
     "function": {
         "name": "get_weather",
-        "description": "Obtiene la temperatura actual en una ciudad usando una API real",
+        "description": "Get the current temperature in a city using Open-Meteo (free API)",
         "parameters": {
             "type": "object",
             "properties": {
-                "city": {"type": "string", "description": "Nombre de la ciudad (ej. Madrid, New York)"},
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "Unidad de temperatura"}
+                "city": {"type": "string", "description": "City name (e.g., Madrid, New York)"},
+                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "Temperature unit"}
             },
             "required": ["city"]
         }
@@ -126,31 +138,46 @@ get_weather_schema = {
 }
 
 
-def search_web(query: str) -> str:
-    """Realiza una búsqueda en internet usando DuckDuckGo y devuelve un resumen del primer resultado"""
+def search_web(query: str, num_results: int = 3) -> str:
     try:
-        url = f"https://duckduckgo.com/html/?q={query}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        result = soup.find('a', class_='result__a')
-        if result:
-            title = result.text
-            link = result['href']
-            return f"Resultado principal: {title}\nEnlace: {link}"
-        return "No encontré resultados relevantes."
+        api_key = os.getenv("SERPAPI_API_KEY")
+        if not api_key:
+            return "Error: SERPAPI_API_KEY not found in environment variables"
+
+        params = {
+            "engine": "google",
+            "q": query,
+            "num": num_results,
+            "api_key": api_key
+        }
+        search = GoogleSearch(params)
+        results = search.get_dict().get("organic_results", [])
+        print(results)
+
+        if not results:
+            return "I did not find any relevant results"
+
+        output = []
+        for res in results:
+            title = res.get("title", "Untitled")
+            link = res.get("link", "#")
+            snippet = res.get("snippet", "")[:300] + "..." if res.get("snippet") else ""
+            output.append(f"- {title}\n  Link: {link}\n  {snippet}")
+
+        return "\n\n".join(output)
     except Exception as e:
-        return f"Error en búsqueda: {str(e)}"
+        return f"Error in SerpApi: {str(e)}"
 
 search_web_schema = {
     "type": "function",
     "function": {
         "name": "search_web",
-        "description": "Busca información en internet y devuelve el primer resultado relevante",
+        "description": "Search for information on Google using SerpApi and return the top results with title, link, and summary.",
         "parameters": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Consulta de búsqueda"}
+                "query": {"type": "string", "description": "Search query"},
+                "num_results": {"type": "integer", "description": "Number of results (optional, default 3)"}
             },
             "required": ["query"]
         }

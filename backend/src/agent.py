@@ -22,7 +22,14 @@ ALL_TOOLS_FUNCTIONS = {
 }
 
 class Agent:
-    def __init__(self, provider: LLMProvider, system: str = "Eres un asistente útil que habla español y eres muy conciso con tus respuestas.", tools: list = None):
+    def __init__(self, 
+                provider: LLMProvider, 
+                system: str = '''You are a helpful and accurate assistant who responds in Spanish.
+                - Use the tools available when the question requires it (files, weather, web search).
+                - If you don't know something, use a tool instead of making it up.
+                - Be concise, clear, and direct.
+                - Maintain the context of the conversation''', 
+                tools: list = None):
         self.provider = provider
         self.messages = [{"role": "system", "content": system}]
         self.tools = tools or ALL_TOOLS_SCHEMAS
@@ -35,8 +42,8 @@ class Agent:
             try:
                 response = self.provider.generate_response(self.messages, self.tools, params)
             except ValueError as e:
-                print(f"Error en provider: {e}")
-                return "Lo siento, hubo un error al generar la respuesta.", tool_logs
+                print(f"Provider error: {e}")
+                return "Sorry, there was an error generating the response", tool_logs
 
             if response['tool_calls']:
                 formatted_tool_calls = [
@@ -51,23 +58,21 @@ class Agent:
                     for call in response['tool_calls']
                 ]
 
-                # Agregamos el mensaje del assistant con tool_calls correctamente formateado
                 self.messages.append({
                     "role": "assistant",
                     "content": None,  
                     "tool_calls": formatted_tool_calls
                 })
 
-                # Ejecutamos cada tool call
                 for call in response['tool_calls']:
                     fn_name = call['function']['name']
                     try:
                         args = json.loads(call['function']['arguments'])
                     except json.JSONDecodeError:
-                        print("Error parseando argumentos de la tool call")
+                        print("Error parsing arguments from the tool call")
                         args = {}
 
-                    log_msg = f"Llamando a herramienta: {fn_name} con args: {args}"
+                    log_msg = f"Calling tool: {fn_name} with arguments: {args}"
                     tool_logs.append(log_msg)
                     print(log_msg)
 
@@ -75,7 +80,7 @@ class Agent:
                         try:
                             result = self.tool_functions[fn_name](**args)
                         except Exception as e:
-                            result = f"Error ejecutando herramienta: {str(e)}"
+                            result = f"Error executing tool: {str(e)}"
                             print(result)
 
                         self.messages.append({
@@ -89,7 +94,7 @@ class Agent:
                             "role": "tool",
                             "tool_call_id": call['id'],
                             "name": fn_name,
-                            "content": "Herramienta no encontrada"
+                            "content": "Tool not found"
                         })
             else:
                 final_content = response['content']

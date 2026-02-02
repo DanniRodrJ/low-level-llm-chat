@@ -33,4 +33,4 @@ class OpenAIProvider(LLMProvider):
                 'tool_calls': tool_calls
             }
         except Exception as e:
-            raise ValueError(f"Error en OpenAI: {str(e)}")
+            raise ValueError(f"Error in OpenAI: {str(e)}")
