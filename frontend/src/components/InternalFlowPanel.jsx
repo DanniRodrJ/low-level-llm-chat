@@ -232,7 +232,7 @@ const InternalFlowPanel = ({ currentFlow, showFlow, setShowFlow }) => {
               Send a message to see the internal flow step by step
             </p>
             <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-              <p className="text-xs text-slate-600 dark:text-slate-400">Prueba con:</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Try with:</p>
               <p className="text-sm font-mono text-slate-700 dark:text-slate-300 mt-1">
                 "What's the weather like in Madrid?"<br/>
                 "Create a file named demo.txt with the text ‘Hello from low-level LLM chat’."<br/>
