@@ -24,7 +24,7 @@ ALL_TOOLS_FUNCTIONS = {
 class Agent:
     def __init__(self, 
                 provider: LLMProvider, 
-                system: str = '''You are a helpful and accurate assistant who responds in Spanish.
+                system: str = '''You are a helpful and accurate assistant.
                 - Use the tools available when the question requires it (files, weather, web search).
                 - If you don't know something, use a tool instead of making it up.
                 - Be concise, clear, and direct.
