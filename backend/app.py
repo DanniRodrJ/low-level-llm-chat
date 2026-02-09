@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from typing import Dict, Optional
 from src.agent import Agent
 from src.providers.factory import ProviderFactory 
+from src.memory.local_memory import InMemoryStore
 
 app = FastAPI(
     title="Low-Level LLM Chat API",
@@ -19,7 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+memory_store = InMemoryStore()
 sessions: Dict[str, Agent] = {}
+
 class ChatRequest(BaseModel):
     session_id: str = Field(default_factory=lambda: "sess_" + __import__("uuid").uuid4().hex[:8])
     message: str = Field(..., min_length=1, description="User message (required)")
@@ -36,7 +40,7 @@ async def chat(request: ChatRequest):
     if request.provider not in ["openai", "hf", "ollama"]:
         raise HTTPException(
             status_code=422,
-            detail="Invalid supplier. Usa 'openai', 'hf' o 'ollama'."
+            detail="Invalid supplier"
         )
 
     session_id = request.session_id
@@ -44,7 +48,10 @@ async def chat(request: ChatRequest):
     if session_id not in sessions:
         try:
             provider_instance = ProviderFactory.get_provider(request.provider)
-            sessions[session_id] = Agent(provider_instance)
+            sessions[session_id] = Agent(
+                provider_instance,
+                memory=memory_store,
+                session_id=session_id)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -52,15 +59,37 @@ async def chat(request: ChatRequest):
             )
 
     agent = sessions[session_id]
+    
+    provider_map = {
+        "openai": "OpenAIProvider",
+        "ollama": "OllamaProvider",
+        "hf": "HuggingFaceProvider"
+    }
+    
+    current_class_name = agent.provider.__class__.__name__
+    requested_class_name = provider_map.get(request.provider)
+    
+    if current_class_name != requested_class_name:
+        try:
+            print(f"🔄 Switching provider for session {session_id}: {current_class_name} -> {requested_class_name}")
+            agent.provider = ProviderFactory.get_provider(request.provider)
+        except Exception as e:
+             raise HTTPException(
+                status_code=500,
+                detail=f"Error switching to provider {request.provider}: {str(e)}"
+            )
 
     try:
-        response, tool_logs = agent.process_input(
+        response, tool_logs = await run_in_threadpool(
+            agent.process_input,
             user_input=request.message,
             params={"temperature": request.temperature}
         )
         
+        current_history = memory_store.get_messages(session_id)
+        
         internal_flow = {
-            "messages": agent.messages, 
+            "messages": current_history, 
             "params": {"temperature": request.temperature}, 
             "tool_logs": tool_logs 
         }

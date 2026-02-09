@@ -1,6 +1,8 @@
 from .openai import OpenAIProvider
 from .huggingface import HuggingFaceProvider
 from .ollama import OllamaProvider
+from .base import LLMProvider
+from typing import Type
 from ..config.config import Config
 
 class ProviderFactory:
