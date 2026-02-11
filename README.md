@@ -45,47 +45,61 @@ Real-world AI apps often freeze while "thinking."
     * Exact JSON payload sent to the API.
     * Tool execution outputs.
 
-## ```Local Installation and Execution```
+## 🛠️ ```Installation & Setup```
 
-1. Clone the repository: 
+### Prerequisites
+* Python 3.10+
+* Node.js & npm
+* (Optional) Ollama installed locally for local inference.
+
+### Backend Setup
 ```bash
-  git clone https://github.com/DanniRodrJ/low-level-llm-chat
-  cd low-level-llm-chat
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
-2. Backend:
+* Create a .env file in backend/:
+```TOML
+OPENROUTER_API_KEY=your_key_here
+HF_TOKEN=your_huggingface_token
+```
+* Run the server:
 ```bash
-  cd backend
-  python -m venv venv
-  source venv/bin/activate  # Windows: venv\Scripts\activate
-  pip install -r requirements.txt
-  uvicorn app:app --reload --port 8000
+uvicorn app:app --reload
 ```
-3. Frontend:
+
+### Frontend Setup
 ```bash
-  cd frontend
-  npm install
-  npm run dev
+cd frontend
+npm install
+npm run dev
 ```
-4. Open: http://localhost:5173
+* Open http://localhost:5173 in your browser.
+
    
-## ```Recommended Test Prompts```
+## 🧪 ```Recommended Test Prompts```
 These prompts demonstrate tool calling, chaining, and the internal flow panel (open the panel to view logs and memory):
 
 - **Simple file system**: “List the files in the current directory”
-- **Reading**: “Read the contents of README.md”
-**Editing**: “Create a demo.txt file with ‘Hello from low-level chat’ and then read it”
+- **Reading Files**: "Read the contents of README.md"
+- **Editing Files**: “Create a demo.txt file with ‘Hello from low-level chat’ and then read it”
 - **Real weather**: “What is the temperature in Madrid?”
-Web search: “Search the internet for ‘Python best practices 2026’”
+- **Web search**: “Search the internet for ‘Python best practices 2026’”
 - **Advanced chaining**: “List the files, search the internet for ‘what is tool calling in LLMs’ and create a tool_calling.txt file with a short summary of the first result”
 
 ## 💡 ```Key Engineering Takeaways```
 This project demonstrates a shift towards infrastructure-aware AI development, focusing on:
 
-1. Vendor Agnosticism: The architecture allows switching model providers purely through configuration/injection, preventing vendor lock-in.
+1. **Vendor Agnosticism**: The architecture allows switching model providers purely through configuration/injection, preventing vendor lock-in.
 
-2. System Observability: Full visibility into the reasoning chain (InternalFlowPanel) enables rapid debugging of hallucinations.
+2. **System Observability**: Full visibility into the reasoning chain (InternalFlowPanel) enables rapid debugging of hallucinations.
 
-3. Scalable Patterns: Designing with concurrency and separation of concerns (Factory, Repository Pattern) ensures the system is ready for real-world traffic scenarios.
+3. **Scalable Patterns**: Designing with concurrency and separation of concerns (Factory, Repository Pattern) ensures the system is ready for real-world traffic scenarios.
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👩‍💻 ```Developer```
 
