@@ -20,7 +20,7 @@ Instead of adapting business logic to a framework's opinionated structure, I imp
 
 ### 2. Solving the "Blocking" Problem (AsyncIO + ThreadPools)
 Real-world AI apps often freeze while "thinking."
-* **Solution:** The backend uses **FastAPI** with `ThreadPoolExecutor` to offload blocking inference calls (I/O bound APIs or CPU bound local models) to background threads, keeping the main Event Loop responsive.
+* **Solution:** The backend uses **FastAPI** with `ThreadPoolExecutor` to offload blocking inference calls (I/O bound APIs or CPU-bound local models) to background threads, keeping the main Event Loop responsive.
 
 ### 3. Decoupled State (Dependency Injection)
 "Memory" is treated as an infrastructure concern, not an agent property.
@@ -81,12 +81,12 @@ npm run dev
 ## 🧪 ```Recommended Test Prompts```
 These prompts demonstrate tool calling, chaining, and the internal flow panel (open the panel to view logs and memory):
 
-- **Simple file system**: “List the files in the current directory”
+- **Simple file system**: “List the files in the current directory.”
 - **Reading Files**: "Read the contents of README.md"
-- **Editing Files**: “Create a demo.txt file with ‘Hello from low-level chat’ and then read it”
+- **Editing Files**: “Create a demo.txt file with ‘Hello from low-level chat’ and then read it.”
 - **Real weather**: “What is the temperature in Madrid?”
 - **Web search**: “Search the internet for ‘Python best practices 2026’”
-- **Advanced chaining**: “List the files, search the internet for ‘what is tool calling in LLMs’ and create a tool_calling.txt file with a short summary of the first result”
+- **Advanced chaining**: “List the files, search the internet for ‘what is tool calling in LLMs’ and create a tool_calling.txt file with a short summary of the first result.”
 
 ## 💡 ```Key Engineering Takeaways```
 This project demonstrates a shift towards infrastructure-aware AI development, focusing on:
@@ -97,13 +97,13 @@ This project demonstrates a shift towards infrastructure-aware AI development, f
 
 3. **Scalable Patterns**: Designing with concurrency and separation of concerns (Factory, Repository Pattern) ensures the system is ready for real-world traffic scenarios.
 
-## 📜 License
+## 📜 ```License```
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👩‍💻 ```Developer```
 
-If you would like to contact me, simply click on my name and you will be redirected to my LinkedIn profile. I would be delighted 🤗 to answer your questions and share more details about my skills and experience.
+If you would like to contact me, simply click on my name, and you will be redirected to my LinkedIn profile. I would be delighted 🤗 to answer your questions and share more details about my skills and experience.
 
 <div align="center">
 
